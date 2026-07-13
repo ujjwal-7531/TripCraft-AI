@@ -1,0 +1,33 @@
+{
+  "name": "tripcraft",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "NODE_OPTIONS='--dns-result-order=ipv6first' node server.js",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.395.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.5.2",
+    "oxlint": "^0.15.0",
+    "postcss": "^8.5.19",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.4.2"
+  }
+}
