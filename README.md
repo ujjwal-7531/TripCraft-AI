@@ -1,117 +1,238 @@
-# TripCraft - Premium AI Agent Travel Planner
+# TripCraft — AI Travel Planner
 
-TripCraft is a stunning, glassmorphic dark-mode web application designed to act as an AI Travel Planner. Built on a React (Vite) frontend and a Node.js Express backend, it provides seamless travel itineraries, geolocated sight maps using Leaflet.js, lodging cost meters, culinary highlights, authentic souvenirs, and train ticket searches via IRCTC (RapidAPI or AI simulation fallback).
+TripCraft is a full-stack AI travel planner for Indian routes. Enter a source and destination, and the app generates trip metadata, a day-by-day itinerary (streamed live), an interactive map, train options, food highlights, souvenirs, and a budget breakdown.
 
----
-
-## Key Features
-*   **Dual Request AI Flow:** Separates fast geocoding and metadata collection (Call 1) from progressive chunk-based travel guide streaming (Call 2) for an instantly interactive and engaging UX.
-*   **Interactive Dark-Theme Map:** Integrates Leaflet.js with CartoDB Dark Matter tiles, geocoding coordinates of stations and local attractions automatically.
-*   **Live IRCTC Trains & Fare Checks:** Connects to RapidAPI's `TrainsBetweenStations V3` and `Get Fare` endpoints, featuring a smart hybrid fare-checker that computes estimates to save API quotas and fetches live rates on-demand.
-*   **Progressive Text Streaming:** Streams Markdown text chunk-by-chunk using Chunked Transfer Encoding.
-*   **Containerized & AWS Ready:** Packaged in a compact, multi-stage Docker image and ready for zero-downtime AWS deployments.
+**Stack:** React (Vite) + Node.js (Express) + Google Gemini + optional RapidAPI (IRCTC trains)
 
 ---
 
-## Getting Started
+## For Team Members — Quick Start
 
-### Prerequisites
-*   Node.js (v18 or higher)
-*   NPM
-*   Docker (Optional, for containerized run)
+Follow these steps after cloning the repo. **Each person uses their own API keys** — never share or commit them.
 
-### Environment Setup
-Create a `.env` file in the project root (you can copy `.env.example`):
+### 1. Prerequisites
+
+- [Node.js](https://nodejs.org/) v18 or higher
+- npm (comes with Node.js)
+- Git
+- Docker (optional, only if you want to run via container)
+
+### 2. Clone the repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/TripCraft.git
+cd TripCraft
+```
+
+### 3. Install dependencies
+
+```bash
+npm install --legacy-peer-deps
+```
+
+### 4. Set up your environment variables
+
+Copy the example file and create your own local `.env`:
+
 ```bash
 cp .env.example .env
 ```
-Provide your API credentials:
-*   `GEMINI_API_KEY`: Obtain this from Google AI Studio.
-*   `RAPIDAPI_KEY`: Obtain this from your RapidAPI Dashboard after subscribing to the IRCTC API.
+
+Open `.env` in a text editor and add **your own** keys:
+
+```env
+PORT=8080
+
+# Required — get from https://aistudio.google.com/apikey
+GEMINI_API_KEY=your_actual_gemini_key_here
+
+# Model to use (default is fine)
+GEMINI_MODEL=gemini-2.5-flash
+
+# Optional — live train/fare data from IRCTC via RapidAPI
+# Without this, trains are AI-simulated instead of live
+RAPIDAPI_KEY=your_actual_rapidapi_key_here
+```
+
+> **Never commit `.env` to GitHub.** It is already listed in `.gitignore`. Only `.env.example` (with placeholders) is tracked in the repo.
+
+### 5. Build and run
+
+**Production mode (recommended — single port, same as Docker):**
+
+```bash
+npm run build
+npm start
+```
+
+Open **http://localhost:8080** in your browser.
+
+**Developer mode (hot reload for frontend changes):**
+
+Terminal 1 — backend:
+```bash
+npm start
+```
+
+Terminal 2 — frontend dev server:
+```bash
+npm run dev
+```
+
+Open **http://localhost:5173** (API requests are proxied to port 8080).
+
+### 6. Verify everything is working
+
+Check the health endpoint:
+
+```bash
+curl http://localhost:8080/health
+```
+
+Expected response:
+```json
+{
+  "status": "healthy",
+  "geminiConfigured": true,
+  "rapidApiConfigured": true,
+  "geminiModel": "gemini-2.5-flash"
+}
+```
+
+In the app, open **Settings** (top right) to confirm Gemini and RapidAPI connection status.
 
 ---
 
-## Running Locally
+## Getting API Keys
 
-### 1. Developer Mode (Hot Reloading Frontend)
-For local development, we run the frontend Vite dev server and the backend Express server side-by-side.
+### Gemini API (required)
 
-*   **Step 1:** Start the Express backend server:
-    ```bash
-    npm start
-    ```
-    *(Starts the backend API on port `8080`)*
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+2. Sign in with a Google account
+3. Click **Create API key**
+4. Paste the key into `GEMINI_API_KEY` in your `.env`
 
-*   **Step 2:** Start the React Vite frontend development server:
-    ```bash
-    npm run dev
-    ```
-    *(Starts the React dev server on port `5173` with proxying to backend)*
+Without this key, trip planning, itineraries, and metadata will not work.
 
-### 2. Production Mode (Single Port Serving)
-To test the production build locally as it will behave in the Docker container:
+### RapidAPI / IRCTC (optional)
 
-```bash
-# 1. Compile the React frontend
-npm run build
+1. Create an account at [RapidAPI](https://rapidapi.com/)
+2. Subscribe to an [IRCTC / Indian Railways API](https://rapidapi.com/search?term=irctc)
+3. Copy your RapidAPI key into `RAPIDAPI_KEY` in your `.env`
 
-# 2. Run the Express production server
-npm start
-```
-Open [http://localhost:8080](http://localhost:8080) to access the app.
+Without this key, the app still works — train data is **AI-simulated** via Gemini instead of live IRCTC data. The Trains tab will show an **AI Simulated** badge and explain why live data was not used.
+
+---
+
+## What the App Does
+
+| Feature | Description |
+|---|---|
+| **Trip metadata** | Geocodes cities, finds station codes, suggests places, food, souvenirs, and budget |
+| **Itinerary** | Streams a day-by-day Markdown travel plan in real time |
+| **Map** | Leaflet map with source, destination, and attraction markers |
+| **Trains** | Live IRCTC data via RapidAPI, or Gemini simulation as fallback |
+| **Fares** | Live fare lookup on demand, with distance-based estimates as fallback |
+| **Budget** | Breakdown of transport, lodging, food, and shopping costs |
+
+---
+
+## Troubleshooting
+
+| Problem | What to do |
+|---|---|
+| `geminiConfigured: false` in `/health` | Check `GEMINI_API_KEY` in `.env` — no placeholders, no extra spaces |
+| `Gemini API quota exceeded` | Wait a few minutes or check usage at [ai.google.dev](https://ai.google.dev) |
+| `Network error: cannot reach Google Gemini API` | Check internet connection; restart with `npm start` |
+| `RapidAPI authentication failed` | Verify `RAPIDAPI_KEY` and that your IRCTC API subscription is active |
+| Port 8080 already in use | Stop the other process: `fuser -k 8080/tcp` then `npm start` |
+| `npm install` peer dependency errors | Use `npm install --legacy-peer-deps` |
+
+Error messages in the app are specific — they tell you whether **RapidAPI** or **Gemini** failed and why.
 
 ---
 
 ## Running with Docker
 
-You can run the full-stack app inside a single Docker container:
-
-### Using Docker Compose (Recommended)
 ```bash
+# Build and run with docker-compose
 docker-compose up --build
 ```
 
-### Using Raw Docker CLI
-```bash
-# Build the container
-docker build -t tripcraft .
+Or manually:
 
-# Run the container (injects credentials from your local .env file)
+```bash
+docker build -t tripcraft .
 docker run -p 8080:8080 --env-file .env tripcraft
 ```
-Open [http://localhost:8080](http://localhost:8080) in your browser.
+
+Open **http://localhost:8080**.
 
 ---
 
 ## Deploying to AWS
 
-### Option 1: AWS App Runner (Recommended - Direct Container)
-AWS App Runner is the easiest way to deploy containerized web apps directly.
+### AWS App Runner (recommended)
 
-1.  Push your code to a GitHub repository.
-2.  Go to the **AWS App Runner Console** and click **Create service**.
-3.  Set the repository type to **GitHub** and connect your repo.
-4.  Configure the build:
-    *   **Runtime:** `Docker`
-    *   **Port:** `8080`
-5.  In the configuration, add the environment variables:
-    *   `GEMINI_API_KEY`: `your_actual_key`
-    *   `RAPIDAPI_KEY`: `your_actual_key`
-6.  Click **Deploy**. AWS will automatically build your Dockerfile and assign a public HTTPS URL.
+1. Push this repo to GitHub
+2. In AWS App Runner → **Create service** → connect your GitHub repo
+3. Set **Runtime** to Docker, **Port** to `8080`
+4. Add environment variables: `GEMINI_API_KEY`, `RAPIDAPI_KEY`, `GEMINI_MODEL`
+5. Deploy — AWS provides a public HTTPS URL
 
-### Option 2: AWS Elastic Beanstalk (Docker Platform)
-1.  Initialize Beanstalk inside the directory:
-    ```bash
-    eb init -p docker tripcraft
-    ```
-2.  Set up environment configurations:
-    ```bash
-    eb create tripcraft-env
-    ```
-3.  Add environment variables in the AWS Elastic Beanstalk console under **Configuration > Updates and Deployments > Environment Properties**:
-    *   `GEMINI_API_KEY`
-    *   `RAPIDAPI_KEY`
-4.  Deploy updates:
-    ```bash
-    eb deploy
-    ```
+### AWS Elastic Beanstalk
+
+```bash
+eb init -p docker tripcraft
+eb create tripcraft-env
+```
+
+Add `GEMINI_API_KEY` and `RAPIDAPI_KEY` under **Configuration → Environment properties**, then:
+
+```bash
+eb deploy
+```
+
+---
+
+## Project Structure
+
+```
+TripCraft/
+├── src/                  # React frontend
+│   ├── App.jsx           # Main UI
+│   └── components/       # Map and other components
+├── server.js             # Express backend + API routes
+├── .env.example          # Environment template (safe to commit)
+├── .env                  # Your secrets (NEVER commit)
+├── Dockerfile            # Container build
+├── docker-compose.yml    # Local Docker setup
+└── package.json          # Dependencies and scripts
+```
+
+---
+
+## API Routes (for reference)
+
+| Method | Route | Purpose |
+|---|---|---|
+| `GET` | `/health` | Server and API key status |
+| `POST` | `/api/trip-meta` | Structured trip metadata (JSON) |
+| `POST` | `/api/stream-itinerary` | Streaming day-by-day itinerary |
+| `GET` | `/api/trains` | Train list (RapidAPI or Gemini fallback) |
+| `GET` | `/api/fare` | Ticket fare for a train class |
+
+---
+
+## Security Reminders for the Team
+
+- **Do not** put API keys in frontend code
+- **Do not** commit `.env` — use `.env.example` as the template only
+- **Do not** share keys in chat, screenshots, or pull requests
+- If a key is accidentally pushed to GitHub, **revoke it immediately** and generate a new one
+
+---
+
+## License
+
+This project is for educational / team use. Add a license file if needed before public distribution.
