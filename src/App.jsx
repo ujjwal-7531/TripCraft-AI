@@ -6,6 +6,60 @@ import {
 } from "lucide-react";
 import MapComponent from "./components/MapComponent";
 
+const parseInlineMarkdown = (text) => {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
+const parseMarkdownToJSX = (text) => {
+  if (!text) return null;
+  const lines = text.split("\n");
+  return lines.map((line, idx) => {
+    if (line.startsWith("# ")) {
+      return (
+        <h3 key={idx} className="text-base font-bold text-white mt-4 mb-2 first:mt-0">
+          {parseInlineMarkdown(line.slice(2))}
+        </h3>
+      );
+    }
+    if (line.startsWith("## ")) {
+      return (
+        <h4 key={idx} className="text-sm font-bold text-white mt-3 mb-1">
+          {parseInlineMarkdown(line.slice(3))}
+        </h4>
+      );
+    }
+    if (line.startsWith("### ")) {
+      return (
+        <h5 key={idx} className="text-xs font-bold text-slate-200 mt-2 mb-1">
+          {parseInlineMarkdown(line.slice(4))}
+        </h5>
+      );
+    }
+    if (line.trim().startsWith("- ") || line.trim().startsWith("* ")) {
+      const content = line.trim().slice(2);
+      return (
+        <li key={idx} className="ml-4 list-disc text-sm text-slate-300 leading-relaxed mb-1">
+          {parseInlineMarkdown(content)}
+        </li>
+      );
+    }
+    if (!line.trim()) {
+      return <div key={idx} className="h-2" />;
+    }
+    return (
+      <p key={idx} className="text-sm text-slate-300 leading-relaxed mb-2">
+        {parseInlineMarkdown(line)}
+      </p>
+    );
+  });
+};
+
 export default function App() {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
@@ -194,9 +248,7 @@ export default function App() {
     }
   };
 
-  const budgetTotal = metaData?.budget
-    ? Object.values(metaData.budget).reduce((s, v) => s + (Number(v) || 0), 0)
-    : 0;
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] grid-rows-[auto_1fr] gap-6 max-w-[1440px] mx-auto p-6 min-h-screen text-slate-200 bg-slate-950">
@@ -283,11 +335,12 @@ export default function App() {
             {/* Tabs */}
             <div className="flex gap-1 border-b border-slate-800 mb-4 overflow-x-auto">
               {[
-                { id: "itinerary", label: "Itinerary", icon: Compass },
+                { id: "itinerary", label: "Overview", icon: Compass },
                 { id: "trains", label: "Trains", icon: Train },
                 { id: "food", label: "Food", icon: Utensils },
                 { id: "attractions", label: "Places", icon: MapPin },
-                { id: "budget", label: "Budget", icon: DollarSign },
+                { id: "souvenirs", label: "Souvenirs", icon: Gift },
+
               ].map(({ id, label, icon: Icon }) => (
                 <button key={id} onClick={() => setActiveTab(id)} className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 ${activeTab === id ? "border-cyan-500 text-cyan-500" : "border-transparent text-slate-400"}`}>
                   <Icon size={14} /> {label}
@@ -299,9 +352,15 @@ export default function App() {
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {itineraryError && <div className="xl:col-span-2"><ErrorBox label="Gemini" message={itineraryError} /></div>}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg max-h-[600px] overflow-y-auto">
-                  <pre className="whitespace-pre-wrap text-sm text-slate-300 font-sans leading-relaxed">
-                    {itineraryError ? "Itinerary could not be generated." : itineraryText || "Writing itinerary..."}
-                  </pre>
+                  <div className="space-y-1">
+                    {itineraryError ? (
+                      <p className="text-sm text-rose-400">Overview could not be generated.</p>
+                    ) : itineraryText ? (
+                      parseMarkdownToJSX(itineraryText)
+                    ) : (
+                      <p className="text-sm text-slate-500 italic animate-pulse">Generating overview...</p>
+                    )}
+                  </div>
                   <div ref={streamEndRef} />
                 </div>
                 <div className="h-[400px] rounded-lg overflow-hidden border border-slate-800">
@@ -312,23 +371,19 @@ export default function App() {
 
             {activeTab === "trains" && (
               <div className="space-y-3">
-                {trainsSource && (
+                {trainsSource && trainsSource !== "none" && (
                   <p className="text-xs text-slate-400">
                     Data source:{" "}
-                    <span className={trainsSource === "railradar" ? "text-emerald-400 font-semibold" : "text-violet-400 font-semibold"}>
-                      {trainsSource === "railradar" ? "Live (RailRadar)" : "AI Simulated (Gemini)"}
+                    <span className="text-emerald-400 font-semibold">
+                      Live (RailRadar)
                     </span>
                   </p>
                 )}
                 {trainApiError && <ErrorBox label="RailRadar" message={trainApiError} color="amber" />}
-                {geminiTrainsError && <ErrorBox label="Gemini" message={geminiTrainsError} />}
-                {trainsSource === "gemini-simulated" && trainApiError && !geminiTrainsError && (
-                  <ErrorBox label="Note" message="Showing AI-generated trains because live RailRadar data was unavailable." color="violet" />
-                )}
 
                 {trainsData.length === 0 ? (
                   <p className="text-slate-500 text-sm text-center py-8">
-                    {trainApiError || geminiTrainsError ? "No train data available — see errors above." : "No trains found for this route."}
+                    {trainApiError ? "No train data available — see errors above." : "No trains found for this route."}
                   </p>
                 ) : (
                   trainsData.map((train, i) => (
@@ -368,43 +423,28 @@ export default function App() {
             )}
 
             {activeTab === "attractions" && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {(metaData.placesToVisit || []).map((p, i) => (
-                    <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg">
-                      <p className="font-semibold text-white">{p.name}</p>
-                      <p className="text-xs text-slate-400 mt-1">{p.description}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {(metaData.souvenirs || []).map((s, i) => (
-                    <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg">
-                      <p className="font-semibold text-white">{s.name}</p>
-                      <p className="text-xs text-slate-400 mt-1">{s.description}</p>
-                    </div>
-                  ))}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {(metaData.placesToVisit || []).map((p, i) => (
+                  <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg">
+                    <p className="font-semibold text-white">{p.name}</p>
+                    <p className="text-xs text-slate-400 mt-1">{p.description}</p>
+                  </div>
+                ))}
               </div>
             )}
 
-            {activeTab === "budget" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-6 bg-slate-950 border border-slate-800 rounded-lg text-center">
-                  <p className="text-xs text-slate-400">Total Estimated Budget</p>
-                  <p className="text-3xl font-bold text-white my-2">₹{budgetTotal.toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-slate-500">{groupSize} travelers · {days} days</p>
-                </div>
-                <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-3">
-                  {metaData.budget && Object.entries(metaData.budget).map(([k, v]) => (
-                    <div key={k} className="flex justify-between text-sm">
-                      <span className="text-slate-400 capitalize">{k}</span>
-                      <span className="text-cyan-400 font-semibold">₹{(Number(v) || 0).toLocaleString("en-IN")}</span>
-                    </div>
-                  ))}
-                </div>
+            {activeTab === "souvenirs" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {(metaData.souvenirs || []).map((s, i) => (
+                  <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg">
+                    <p className="font-semibold text-white">{s.name}</p>
+                    <p className="text-xs text-slate-400 mt-1">{s.description}</p>
+                  </div>
+                ))}
               </div>
             )}
+
+
           </div>
         )}
       </main>

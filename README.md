@@ -1,8 +1,8 @@
 # TripCraft — AI Travel Planner
 
-TripCraft is a full-stack AI travel planner for Indian routes. Enter a source and destination, and the app generates trip metadata, a day-by-day itinerary (streamed live), an interactive map, train options, food highlights, souvenirs, and a budget breakdown.
+TripCraft is a premium full-stack AI travel planner for Indian routes. Enter a source and destination, and the app generates a travel overview (streamed live), an interactive Leaflet route map, live train options, local food highlights, and souvenir recommendations.
 
-**Stack:** React (Vite) + Node.js (Express) + Google Gemini + optional RapidAPI (IRCTC trains)
+**Stack:** React (Vite) + Node.js (Express) + Google Gemini + RailRadar API
 
 ---
 
@@ -46,12 +46,11 @@ PORT=8080
 # Required — get from https://aistudio.google.com/apikey
 GEMINI_API_KEY=your_actual_gemini_key_here
 
-# Model to use (default is fine)
-GEMINI_MODEL=gemini-2.5-flash
+# Recommended stable model to avoid 503 high demand errors
+GEMINI_MODEL=gemini-3.1-flash-lite
 
-# Optional — live train/fare data from IRCTC via RapidAPI
-# Without this, trains are AI-simulated instead of live
-RAPIDAPI_KEY=your_actual_rapidapi_key_here
+# Required for live Indian Railways train schedules
+RAILRADAR_API_KEY=your_actual_railradar_key_here
 ```
 
 > **Never commit `.env` to GitHub.** It is already listed in `.gitignore`. Only `.env.example` (with placeholders) is tracked in the repo.
@@ -94,12 +93,12 @@ Expected response:
 {
   "status": "healthy",
   "geminiConfigured": true,
-  "rapidApiConfigured": true,
-  "geminiModel": "gemini-2.5-flash"
+  "liveTrainsConfigured": true,
+  "geminiModel": "gemini-3.1-flash-lite"
 }
 ```
 
-In the app, open **Settings** (top right) to confirm Gemini and RapidAPI connection status.
+In the app, open **Settings** (top right) to confirm Gemini and RailRadar connection status.
 
 ---
 
@@ -112,15 +111,14 @@ In the app, open **Settings** (top right) to confirm Gemini and RapidAPI connect
 3. Click **Create API key**
 4. Paste the key into `GEMINI_API_KEY` in your `.env`
 
-Without this key, trip planning, itineraries, and metadata will not work.
+Without this key, trip planning, overviews, and metadata will not work.
 
-### RapidAPI / IRCTC (optional)
+### RailRadar API (required for trains)
 
-1. Create an account at [RapidAPI](https://rapidapi.com/)
-2. Subscribe to an [IRCTC / Indian Railways API](https://rapidapi.com/search?term=irctc)
-3. Copy your RapidAPI key into `RAPIDAPI_KEY` in your `.env`
+1. Get your API key from [RailRadar](https://railradar.in/)
+2. Paste the key into `RAILRADAR_API_KEY` in your `.env`
 
-Without this key, the app still works — train data is **AI-simulated** via Gemini instead of live IRCTC data. The Trains tab will show an **AI Simulated** badge and explain why live data was not used.
+Without this key, train schedules and fare fetching will return an error or show "No trains found".
 
 ---
 
@@ -128,12 +126,12 @@ Without this key, the app still works — train data is **AI-simulated** via Gem
 
 | Feature | Description |
 |---|---|
-| **Trip metadata** | Geocodes cities, finds station codes, suggests places, food, souvenirs, and budget |
-| **Itinerary** | Streams a day-by-day Markdown travel plan in real time |
-| **Map** | Leaflet map with source, destination, and attraction markers |
-| **Trains** | Live IRCTC data via RapidAPI, or Gemini simulation as fallback |
-| **Fares** | Live fare lookup on demand, with distance-based estimates as fallback |
-| **Budget** | Breakdown of transport, lodging, food, and shopping costs |
+| **Trip metadata** | Geocodes cities, finds station codes, suggests places, food, and souvenirs |
+| **Overview** | Streams a randomized, creative travel summary in real time |
+| **Map** | Leaflet map focusing on the source and destination route with a clear legend |
+| **Trains** | Real-time intercity trains fetched directly from the RailRadar API |
+| **Fares** | Live ticket fare lookups for different booking classes |
+| **Souvenirs** | Local souvenir recommendations to help users find authentic gifts |
 
 ---
 
@@ -144,11 +142,11 @@ Without this key, the app still works — train data is **AI-simulated** via Gem
 | `geminiConfigured: false` in `/health` | Check `GEMINI_API_KEY` in `.env` — no placeholders, no extra spaces |
 | `Gemini API quota exceeded` | Wait a few minutes or check usage at [ai.google.dev](https://ai.google.dev) |
 | `Network error: cannot reach Google Gemini API` | Check internet connection; restart with `npm start` |
-| `RapidAPI authentication failed` | Verify `RAPIDAPI_KEY` and that your IRCTC API subscription is active |
+| `RailRadar API authentication failed` | Verify `RAILRADAR_API_KEY` and that your subscription is active |
 | Port 8080 already in use | Stop the other process: `fuser -k 8080/tcp` then `npm start` |
 | `npm install` peer dependency errors | Use `npm install --legacy-peer-deps` |
 
-Error messages in the app are specific — they tell you whether **RapidAPI** or **Gemini** failed and why.
+Error messages in the app are specific — they tell you whether **RailRadar** or **Gemini** failed and why.
 
 ---
 
@@ -177,7 +175,7 @@ Open **http://localhost:8080**.
 1. Push this repo to GitHub
 2. In AWS App Runner → **Create service** → connect your GitHub repo
 3. Set **Runtime** to Docker, **Port** to `8080`
-4. Add environment variables: `GEMINI_API_KEY`, `RAPIDAPI_KEY`, `GEMINI_MODEL`
+4. Add environment variables: `GEMINI_API_KEY`, `RAILRADAR_API_KEY`, `GEMINI_MODEL`
 5. Deploy — AWS provides a public HTTPS URL
 
 ### AWS Elastic Beanstalk
@@ -187,7 +185,7 @@ eb init -p docker tripcraft
 eb create tripcraft-env
 ```
 
-Add `GEMINI_API_KEY` and `RAPIDAPI_KEY` under **Configuration → Environment properties**, then:
+Add `GEMINI_API_KEY` and `RAILRADAR_API_KEY` under **Configuration → Environment properties**, then:
 
 ```bash
 eb deploy
@@ -207,7 +205,8 @@ TripCraft/
 ├── .env                  # Your secrets (NEVER commit)
 ├── Dockerfile            # Container build
 ├── docker-compose.yml    # Local Docker setup
-└── package.json          # Dependencies and scripts
+├── package.json          # Dependencies and scripts
+└── README.md             # Documentation
 ```
 
 ---
@@ -218,8 +217,8 @@ TripCraft/
 |---|---|---|
 | `GET` | `/health` | Server and API key status |
 | `POST` | `/api/trip-meta` | Structured trip metadata (JSON) |
-| `POST` | `/api/stream-itinerary` | Streaming day-by-day itinerary |
-| `GET` | `/api/trains` | Train list (RapidAPI or Gemini fallback) |
+| `POST` | `/api/stream-itinerary` | Streaming travel overview (markdown) |
+| `GET` | `/api/trains` | Live trains list from RailRadar |
 | `GET` | `/api/fare` | Ticket fare for a train class |
 
 ---

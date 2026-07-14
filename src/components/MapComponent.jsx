@@ -29,14 +29,7 @@ const destIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-const placeIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-cyan.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [22, 36],
-  iconAnchor: [11, 36],
-  popupAnchor: [1, -34],
-  shadowSize: [36, 36]
-});
+
 
 export default function MapComponent({ source, destination, places = [] }) {
   const mapContainerRef = useRef(null);
@@ -86,15 +79,7 @@ export default function MapComponent({ source, destination, places = [] }) {
       markers.push([destination.lat, destination.lng]);
     }
 
-    // Add Markers for Places to Visit
-    places.forEach((place) => {
-      if (place.lat && place.lng) {
-        L.marker([place.lat, place.lng], { icon: placeIcon })
-          .addTo(map)
-          .bindPopup(`<b>${place.name}</b><br/>${place.description || ""}<br/><i>Stay: ${place.duration || "N/A"} | Entry: ${place.ticketPrice || "Free"}</i>`);
-        markers.push([place.lat, place.lng]);
-      }
-    });
+
 
     // Draw route line between Source and Destination
     if (source && source.lat && source.lng && destination && destination.lat && destination.lng) {
@@ -123,5 +108,22 @@ export default function MapComponent({ source, destination, places = [] }) {
     };
   }, [source, destination, places]);
 
-  return <div ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />;
+  return (
+    <div className="relative w-full h-full">
+      <div ref={mapContainerRef} className="w-full h-full" />
+      {/* Map Legend Overlay */}
+      <div className="absolute bottom-3 left-3 z-[1000] p-2.5 bg-slate-900/95 border border-slate-800 rounded-lg text-[10px] space-y-1.5 backdrop-blur-sm pointer-events-none shadow-lg">
+        <p className="font-bold text-white border-b border-slate-800 pb-1 mb-1">Map Legend</p>
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block border border-purple-400" />
+          <span className="text-slate-300 font-medium">Start / Source</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block border border-red-400" />
+          <span className="text-slate-300 font-medium">Destination</span>
+        </div>
+
+      </div>
+    </div>
+  );
 }
