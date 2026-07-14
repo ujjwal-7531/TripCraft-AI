@@ -72,7 +72,7 @@ export default function App() {
   const [tripError, setTripError] = useState(null);
   const [itineraryError, setItineraryError] = useState(null);
 
-  const [health, setHealth] = useState({ geminiConfigured: false, liveTrainsConfigured: false });
+  const [health, setHealth] = useState({ geminiConfigured: null, liveTrainsConfigured: null });
   const [metaData, setMetaData] = useState(null);
   const [itineraryText, setItineraryText] = useState("");
   const [trainsData, setTrainsData] = useState([]);
@@ -252,12 +252,14 @@ export default function App() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] grid-rows-[auto_1fr] gap-6 max-w-[1440px] mx-auto p-6 min-h-screen text-slate-200 bg-slate-950">
-      <header className="col-span-full flex justify-between items-center py-3 px-5 bg-slate-900 border border-slate-800 rounded-xl">
-        <div className="flex items-center gap-3">
-          <Compass className="text-slate-400" size={32} />
+      <header className="col-span-full flex justify-between items-center py-4 px-6 bg-slate-900 border border-slate-800 rounded-xl shadow-lg shadow-black/30">
+        <div className="flex items-center gap-4">
+          <Compass className="text-cyan-400 animate-pulse-slow transition-transform duration-300 hover:rotate-12" size={38} />
           <div>
-            <h1 className="text-xl font-bold text-white">TripCraft</h1>
-            <p className="text-[10px] text-slate-500 uppercase">AI Travel Planner</p>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-1">
+              Trip<span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Craft</span>
+            </h1>
+            <p className="text-xs text-slate-400 font-bold tracking-widest uppercase">AI Travel Planner</p>
           </div>
         </div>
       </header>
@@ -268,21 +270,21 @@ export default function App() {
           <h2 className="text-base font-bold text-white mb-5">Plan Your Trip</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-[11px] font-semibold uppercase text-slate-400">From</label>
-              <input className="w-full mt-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm" placeholder="e.g. Mumbai" value={source} onChange={(e) => setSource(e.target.value)} required disabled={loading} />
+              <label className="text-[11px] font-semibold uppercase text-slate-400 tracking-wider">From</label>
+              <input className="w-full mt-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all duration-200" placeholder="e.g. Mumbai" value={source} onChange={(e) => setSource(e.target.value)} required disabled={loading} />
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase text-slate-400">To</label>
-              <input className="w-full mt-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm" placeholder="e.g. Rishikesh" value={destination} onChange={(e) => setDestination(e.target.value)} required disabled={loading} />
+              <label className="text-[11px] font-semibold uppercase text-slate-400 tracking-wider">To</label>
+              <input className="w-full mt-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all duration-200" placeholder="e.g. Rishikesh" value={destination} onChange={(e) => setDestination(e.target.value)} required disabled={loading} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] font-semibold uppercase text-slate-400">Days</label>
-                <input type="number" min={1} max={30} className="w-full mt-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm" value={days} onChange={(e) => setDays(+e.target.value || 1)} disabled={loading} />
+                <label className="text-[11px] font-semibold uppercase text-slate-400 tracking-wider">Days</label>
+                <input type="number" min={1} max={30} className="w-full mt-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all duration-200" value={days} onChange={(e) => setDays(+e.target.value || 1)} disabled={loading} />
               </div>
               <div>
-                <label className="text-[11px] font-semibold uppercase text-slate-400">Group</label>
-                <select className="w-full mt-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm" value={groupType} onChange={(e) => setGroupType(e.target.value)} disabled={loading}>
+                <label className="text-[11px] font-semibold uppercase text-slate-400 tracking-wider">Group</label>
+                <select className="w-full mt-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all duration-200" value={groupType} onChange={(e) => setGroupType(e.target.value)} disabled={loading}>
                   <option value="solo">Solo (1)</option>
                   <option value="couple">Couple (2)</option>
                   <option value="family">Friends/Family (3+)</option>
@@ -293,7 +295,7 @@ export default function App() {
               {loading ? <><RefreshCw className="animate-spin" size={16} /> Planning...</> : <><Compass size={16} /> Find Route</>}
             </button>
           </form>
-          {!health.geminiConfigured && (
+          {health.geminiConfigured === false && (
             <p className="mt-4 text-[11px] text-red-400">Add GEMINI_API_KEY to server .env</p>
           )}
         </div>
@@ -327,9 +329,6 @@ export default function App() {
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 {metaData.source?.name} <ArrowRight size={18} className="text-slate-500" /> {metaData.destination?.name}
               </h2>
-              <button onClick={() => window.print()} className="text-xs px-3 py-1.5 border border-slate-800 rounded-lg text-slate-400 hover:text-white flex items-center gap-1">
-                <Download size={14} /> Export
-              </button>
             </div>
 
             {/* Tabs */}
@@ -387,7 +386,7 @@ export default function App() {
                   </p>
                 ) : (
                   trainsData.map((train, i) => (
-                    <div key={i} className="p-4 mb-3 bg-slate-950 border border-slate-800 rounded-lg">
+                    <div key={i} className="p-4 mb-3 bg-slate-950 border border-slate-800 rounded-lg hover:border-cyan-500/40 transition-all duration-300 shadow-md hover:shadow-cyan-955/10">
                       <p className="font-semibold text-white">{train.train_name} <span className="text-slate-500 text-xs">#{train.train_number}</span></p>
                       <p className="text-xs text-slate-400 mt-1">{train.depart_time} → {train.arrival_time} · {train.duration} · {train.run_days}</p>
                       <div className="flex flex-wrap gap-2 mt-3">
@@ -414,7 +413,7 @@ export default function App() {
             {activeTab === "food" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(metaData.famousFoods || []).map((f, i) => (
-                  <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg">
+                  <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg hover:scale-[1.02] hover:border-cyan-500/40 transition-all duration-300 shadow-md hover:shadow-cyan-955/10 cursor-default">
                     <p className="font-semibold text-white">{f.name}</p>
                     <p className="text-xs text-slate-400 mt-1">{f.description}</p>
                   </div>
@@ -425,7 +424,7 @@ export default function App() {
             {activeTab === "attractions" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(metaData.placesToVisit || []).map((p, i) => (
-                  <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg">
+                  <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg hover:scale-[1.02] hover:border-cyan-500/40 transition-all duration-300 shadow-md hover:shadow-cyan-955/10 cursor-default">
                     <p className="font-semibold text-white">{p.name}</p>
                     <p className="text-xs text-slate-400 mt-1">{p.description}</p>
                   </div>
@@ -436,7 +435,7 @@ export default function App() {
             {activeTab === "souvenirs" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(metaData.souvenirs || []).map((s, i) => (
-                  <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg">
+                  <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-lg hover:scale-[1.02] hover:border-cyan-500/40 transition-all duration-300 shadow-md hover:shadow-cyan-955/10 cursor-default">
                     <p className="font-semibold text-white">{s.name}</p>
                     <p className="text-xs text-slate-400 mt-1">{s.description}</p>
                   </div>
@@ -448,6 +447,12 @@ export default function App() {
           </div>
         )}
       </main>
+
+      <footer className="col-span-full text-center py-6 mt-6 border-t border-slate-900 text-slate-500 text-xs">
+        <p className="flex items-center justify-center gap-1.5">
+          Made with <span className="text-rose-500 animate-pulse">❤️</span> by <span className="font-semibold text-slate-400 hover:text-cyan-400 transition-colors duration-200 cursor-default">Team US3G</span>
+        </p>
+      </footer>
     </div>
   );
 }
