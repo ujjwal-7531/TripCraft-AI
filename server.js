@@ -467,6 +467,11 @@ app.get(/^(?!\/api|\/health).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`TripCraft server is running on port ${PORT}`);
-});
+if (process.env.VERCEL !== "1") {
+  app.listen(PORT, () => {
+    console.log(`TripCraft server running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
+
